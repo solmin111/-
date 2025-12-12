@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Autoplay Video (Responsive)</title>
+  <style>
+    /* 반응형: 화면 폭에 맞춰 비율 유지 (16:9) */
+    .video-wrap{
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 12px;
+    }
+    .ratio{
+      position: relative;
+      width: 100%;
+      aspect-ratio: 16 / 9; /* 최신 브라우저 */
+      background: #000;
+      overflow: hidden;
+      border-radius: 14px;
+    }
+    /* aspect-ratio 미지원 대비(구형) */
+    @supports not (aspect-ratio: 16 / 9) {
+      .ratio::before{
+        content:"";
+        display:block;
+        padding-top: 56.25%; /* 16:9 */
+      }
+      .ratio > video{
+        position:absolute;
+        top:0; left:0;
+      }
+    }
+
+    video{
+      width: 100%;
+      height: 100%;
+      object-fit: cover;     /* 꽉 차게(필요시 contain으로 변경) */
+      display: block;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+  <div class="video-wrap">
+    <div class="ratio">
+      <video
+        id="myVideo"
+        muted
+        autoplay
+        playsinline
+        loop
+        preload="auto"
+        controls
+      >
+        <!-- MP4(H.264/AAC)는 호환성 가장 좋음 -->
+        <source src="파전조 영상.mp4" type="video/mp4" />
+        <!-- 필요시 WebM 추가 -->
+        브라우저가 video 태그를 지원하지 않습니다.
+      </video>
+    </div>
+  </div>
+
+  <script>
+    // 일부 브라우저는 autoplay 속성만으로 안 될 수 있어 강제 시도
+    const v = document.getElementById("myVideo");
+
+    // 모바일/사파리 정책상 "무음"이 자동재생의 핵심
+    v.muted = true;
+
+    async function tryPlay() {
+      try {
+        await v.play();
+      } catch (e) {
+        // 자동재생이 막혔을 때: 첫 사용자 제스처에서 재시도
+        const resume = async () => {
+          try { await v.play(); } catch(_) {}
+          window.removeEventListener("touchstart", resume);
+          window.removeEventListener("click", resume);
+        };
+        window.addEventListener("touchstart", resume, { once: true });
+        window.addEventListener("click", resume, { once: true });
+      }
+    }
+
+    // 페이지 로드/복귀(특히 iOS) 대응
+    window.addEventListener("load", tryPlay);
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) tryPlay();
+    });
+  </script>
+</body>
+</html>
